@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: "dinnerdash"
+      POSTGRES_DB: "dinnerdash"
+    ports:
+      - 5432:5432
+  migrate:
+    image: dinnerdash/migrate
+    volumes:
+      - ./migrations:/migrate/migrations
+    command: -path migrations -database postgres://postgres:password@postgres/dinnerdash?sslmode=disable up
