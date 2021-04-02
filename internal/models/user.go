@@ -1,33 +1,33 @@
 package models
 
 import (
-	"fmt"
 	"time"
 )
 
 type User struct {
-	ID           int       `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"password_hash"`
-	DisplayName  string    `json:"display_name"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID          string    `json:"id"`
+	Email       string    `json:"email"`
+	DisplayName *string   `json:"displayName"`
+	CreatedAt   time.Time `json:"createdAt"`
+	FamilyID    *int      `json:"familyId"`
+}
+
+type FamilyMember struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
 }
 
 type Family struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Members []User `json:"members"`
-	Owner   *User   `json:"owner"`
+	ID           int            `json:"id"`
+	Name         string         `json:"name"`
+	InvitationId string         `json:"invitationId,omitempty"`
+	Members      []FamilyMember `json:"members"`
 }
 
-func (f *Family) Validate() error {
-	if f.Name == "" {
-		return fmt.Errorf("family name required")
-	}
-	if f.Owner == nil {
-		return fmt.Errorf("family owner required")
-	}
-	return nil
+type UpdateFamilyInput struct {
+	ID           int
+	Name         *string
+	InvitationID *string
 }
 
 type Session struct {

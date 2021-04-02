@@ -1,40 +1,134 @@
 package api
 
 import (
+	"context"
+	"fmt"
 	"gitlab.com/dentych/dinner-dash/internal/database"
 	"gitlab.com/dentych/dinner-dash/internal/models"
+	"math/rand"
+	"time"
+)
+
+var (
+	ErrUserNotInFamily = fmt.Errorf("user is not in the family")
 )
 
 type FamilyApi struct {
 	familyRepo database.FamilyRepo
+	userRepo   database.UserRepo
 }
 
-func (api *FamilyApi) Create(user models.User, family models.Family) (models.Family, error) {
-	family.Owner = &user
-	validationErr := family.Validate()
-	if validationErr != nil {
-		return models.Family{}, validationErr
-	}
+func NewFamilyApi(familyRepo database.FamilyRepo, userRepo database.UserRepo) *FamilyApi {
+	return &FamilyApi{familyRepo: familyRepo, userRepo: userRepo}
+}
 
-	familyID, err := api.familyRepo.Insert(family)
+func (api *FamilyApi) Create(ctx context.Context, userID string, familyName string) (int, error) {
+	familyID, err := api.familyRepo.Insert(ctx, familyName, userID)
+	if err != nil {
+		return 0, err
+	}
+	return familyID, nil
+}
+
+func (api *FamilyApi) Get(ctx context.Context, userID string, familyID int) (models.Family, error) {
+	userIsInFamily, err := api.familyRepo.UserInFamily(ctx, userID, familyID)
 	if err != nil {
 		return models.Family{}, err
 	}
-	family.ID = familyID
-	return family, nil
-}
 
-func (api *FamilyApi) GetFamily(user models.User, familyID int) (models.Family, error) {
-	userInFamily, err := api.familyRepo.UserInFamily(user.ID, familyID)
-	if err != nil {
-		return models.Family{}, err
-	}
-	if !userInFamily {
+	if !userIsInFamily {
 		return models.Family{}, ErrUserNotInFamily
 	}
-	family, err := api.familyRepo.GetById(familyID)
+
+	dbFamily, err := api.familyRepo.GetById(ctx, familyID)
 	if err != nil {
 		return models.Family{}, err
 	}
+
+	members, err := api.userRepo.GetByFamilyId(ctx, familyID)
+	if err != nil {
+		return models.Family{}, err
+	}
+
+	family := models.Family{
+		ID:           dbFamily.ID,
+		Name:         *dbFamily.Name,
+		InvitationId: *dbFamily.InvitationID,
+	}
+	for _, v := range members {
+		family.Members = append(family.Members, models.FamilyMember{
+			ID:          v.ID,
+			DisplayName: *v.DisplayName,
+		})
+	}
+
 	return family, nil
+}
+
+func (api *FamilyApi) Update(ctx context.Context, userID string, family models.UpdateFamilyInput) error {
+	userInFamily, err := api.familyRepo.UserInFamily(ctx, userID, family.ID)
+	if err != nil {
+		return err
+	}
+
+	if !userInFamily {
+		return ErrUserNotInFamily
+	}
+
+	err = api.familyRepo.Update(ctx, database.Family{
+		ID:           family.ID,
+		Name:         family.Name,
+		InvitationID: family.InvitationID,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (api *FamilyApi) CreateInvitation(ctx context.Context, userID string, familyID int) (string, error) {
+	invitationID := api.randomString(10)
+
+	userInFamily, err := api.familyRepo.UserInFamily(ctx, userID, familyID)
+	if err != nil {
+		return "", err
+	}
+
+	if !userInFamily {
+		return "", ErrUserNotInFamily
+	}
+
+	err = api.familyRepo.Update(ctx, database.Family{ID: familyID, InvitationID: &invitationID})
+
+	if err != nil {
+		return "", err
+	}
+
+	return invitationID, nil
+}
+
+func (api *FamilyApi) AcceptInvitation(ctx context.Context, userID string, invitationID string) (int, error) {
+	family, err := api.familyRepo.GetByInvitationID(ctx, invitationID)
+	if err != nil {
+		return 0, err
+	}
+
+	err = api.familyRepo.AddMember(ctx, family.ID, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	return family.ID, nil
+}
+
+var symbols = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+
+func (api *FamilyApi) randomString(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	output := make([]rune, length)
+	for i := range output {
+		output[i] = symbols[rand.Intn(len(symbols))]
+	}
+	return string(output)
 }
