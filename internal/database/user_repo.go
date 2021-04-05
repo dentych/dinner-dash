@@ -32,11 +32,12 @@ type User struct {
 	DisplayName *string   `db:"display_name"`
 	FamilyID    *int      `db:"family_id"`
 	CreatedAt   time.Time `db:"created_at"`
+	FamilyName  *string   `db:"family_name"`
 }
 
 func (r *userRepo) GetById(ctx context.Context, userID string) (*User, error) {
 	var user User
-	err := r.db.Get(&user, "select * from public.user where id = $1", userID)
+	err := r.db.Get(&user, "select u.*, f.name family_name from public.user u left join public.family f on u.family_id = f.id where u.id = $1", userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil

@@ -29,6 +29,7 @@ func (a *UserApi) GetById(ctx context.Context, userID string) (*models.User, err
 		DisplayName: u.DisplayName,
 		CreatedAt:   u.CreatedAt,
 		FamilyID:    u.FamilyID,
+		FamilyName:  u.FamilyName,
 	}, nil
 }
 

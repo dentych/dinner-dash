@@ -10,6 +10,16 @@ type User struct {
 	DisplayName *string   `json:"displayName"`
 	CreatedAt   time.Time `json:"createdAt"`
 	FamilyID    *int      `json:"familyId"`
+	FamilyName  *string   `json:"familyName"`
+}
+
+type UserWithFamilyName struct {
+	ID          string    `json:"id"`
+	Email       string    `json:"email"`
+	DisplayName *string   `json:"displayName,omitempty"`
+	CreatedAt   time.Time `json:"createdAt"`
+	FamilyID    *int      `json:"familyId,omitempty"`
+	FamilyName  *string   `json:"familyName,omitempty"`
 }
 
 type FamilyMember struct {
