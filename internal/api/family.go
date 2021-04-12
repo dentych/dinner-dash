@@ -50,10 +50,15 @@ func (api *FamilyApi) Get(ctx context.Context, userID string, familyID int) (mod
 		return models.Family{}, err
 	}
 
+	var invitationID string
+	if dbFamily.InvitationID != nil {
+		invitationID = *dbFamily.InvitationID
+	}
+
 	family := models.Family{
 		ID:           dbFamily.ID,
 		Name:         *dbFamily.Name,
-		InvitationId: *dbFamily.InvitationID,
+		InvitationId: invitationID,
 	}
 	for _, v := range members {
 		family.Members = append(family.Members, models.FamilyMember{
@@ -75,11 +80,18 @@ func (api *FamilyApi) Update(ctx context.Context, userID string, family models.U
 		return ErrUserNotInFamily
 	}
 
+	var fieldsToUpdate []string
+	if family.Name != nil {
+		fieldsToUpdate = append(fieldsToUpdate, "name")
+	}
+	if family.InvitationID != nil {
+		fieldsToUpdate = append(fieldsToUpdate, "invitationID")
+	}
 	err = api.familyRepo.Update(ctx, database.Family{
 		ID:           family.ID,
 		Name:         family.Name,
 		InvitationID: family.InvitationID,
-	})
+	}, fieldsToUpdate...)
 	if err != nil {
 		return err
 	}
@@ -87,7 +99,7 @@ func (api *FamilyApi) Update(ctx context.Context, userID string, family models.U
 	return nil
 }
 
-func (api *FamilyApi) CreateInvitation(ctx context.Context, userID string, familyID int) (string, error) {
+func (api *FamilyApi) CreateInvitationLink(ctx context.Context, userID string, familyID int) (string, error) {
 	invitationID := api.randomString(10)
 
 	userInFamily, err := api.familyRepo.UserInFamily(ctx, userID, familyID)
@@ -99,13 +111,31 @@ func (api *FamilyApi) CreateInvitation(ctx context.Context, userID string, famil
 		return "", ErrUserNotInFamily
 	}
 
-	err = api.familyRepo.Update(ctx, database.Family{ID: familyID, InvitationID: &invitationID})
+	err = api.familyRepo.Update(ctx, database.Family{ID: familyID, InvitationID: &invitationID}, "InvitationID")
 
 	if err != nil {
 		return "", err
 	}
 
 	return invitationID, nil
+}
+
+func (api *FamilyApi) DeleteInvitationLink(ctx context.Context, userID string, familyID int) error {
+	userInFamily, err := api.familyRepo.UserInFamily(ctx, userID, familyID)
+	if err != nil {
+		return err
+	}
+
+	if !userInFamily {
+		return ErrUserNotInFamily
+	}
+
+	err = api.familyRepo.Update(ctx, database.Family{ID: familyID, InvitationID: nil}, "invitationID")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (api *FamilyApi) AcceptInvitation(ctx context.Context, userID string, invitationID string) (int, error) {

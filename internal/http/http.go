@@ -40,6 +40,7 @@ func (h *Server) SetupAndStart(ctx context.Context, jwtCertificate string) {
 	apiGroup.POST("/family", handler.CreateFamily(h.familyApi))
 	apiGroup.PUT("/family/:id", handler.UpdateFamily(h.familyApi))
 	apiGroup.POST("/family/:id/invite", handler.GenerateInvitation(h.familyApi))
+	apiGroup.DELETE("/family/:id/invite", handler.DeleteInvitationLink(h.familyApi))
 	apiGroup.PUT("/invite/:invitationId", handler.AcceptInvitation(h.familyApi))
 	apiGroup.GET("/recipes", handler.GetRecipes)
 

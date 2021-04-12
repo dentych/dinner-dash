@@ -93,12 +93,30 @@ func GenerateInvitation(familyApi *api.FamilyApi) func(ctx echo.Context) error {
 			ctx.Logger().Errorf("failed to bind familyID=%s: %s", idParam, err)
 			return ctx.JSON(http.StatusBadRequest, "invalid family ID: "+idParam)
 		}
-		invitationID, err := familyApi.CreateInvitation(context.Background(), userID, familyID)
+		invitationID, err := familyApi.CreateInvitationLink(context.Background(), userID, familyID)
 		if err != nil {
 			ctx.Logger().Errorf("error creating invitation ID for familyID=%d, userID=%s: %s", familyID, userID, err)
 			return ctx.JSON(http.StatusInternalServerError, "failed to create invitation ID")
 		}
 		return ctx.JSON(200, invitationID)
+	}
+}
+
+func DeleteInvitationLink(familyApi *api.FamilyApi) func (ctx echo.Context) error {
+	return func(ctx echo.Context) error {
+		userID := util.GetUserID(ctx)
+		idParam := ctx.Param("id")
+		familyID, err := strconv.Atoi(idParam)
+		if err != nil {
+			ctx.Logger().Errorf("failed to bind familyID=%s: %s", idParam, err)
+			return ctx.JSON(http.StatusBadRequest, "invalid family ID: "+idParam)
+		}
+		err = familyApi.DeleteInvitationLink(context.Background(), userID, familyID)
+		if err != nil {
+			ctx.Logger().Errorf("error creating invitation ID for familyID=%d, userID=%s: %s", familyID, userID, err)
+			return ctx.JSON(http.StatusInternalServerError, "failed to remove invitation ID")
+		}
+		return ctx.JSON(200, nil)
 	}
 }
 

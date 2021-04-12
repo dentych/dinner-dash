@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"gitlab.com/dentych/dinner-dash/internal/models"
+	"strings"
 )
 
 type FamilyRepo interface {
 	GetById(ctx context.Context, id int) (Family, error)
 	GetByInvitationID(ctx context.Context, invitationID string) (Family, error)
 	Insert(ctx context.Context, familyName string, userID string) (int, error)
-	Update(ctx context.Context, family Family) error
+	Update(ctx context.Context, family Family, fieldsToUpdate ...string) error
 	Delete(ctx context.Context, family models.Family) error
 	UserInFamily(ctx context.Context, userID string, familyID int) (bool, error)
 	AddMember(ctx context.Context, familyID int, userID string) error
@@ -62,16 +63,23 @@ func (f *familyRepo) Insert(ctx context.Context, familyName string, userID strin
 	return familyId, nil
 }
 
-func (f *familyRepo) Update(ctx context.Context, family Family) error {
+func (f *familyRepo) Update(ctx context.Context, family Family, fieldsToUpdate ...string) error {
 	var sqlKeys []string
 	var sqlValues []interface{}
-	if family.Name != nil {
-		sqlKeys = append(sqlKeys, "name")
-		sqlValues = append(sqlValues, *family.Name)
+	for _, v := range fieldsToUpdate {
+		key := strings.ToLower(v)
+		switch key {
+		case "name":
+			sqlKeys = append(sqlKeys, "name")
+			sqlValues = append(sqlValues, family.Name)
+		case "invitationid":
+			sqlKeys = append(sqlKeys, "invitation_id")
+			sqlValues = append(sqlValues, family.InvitationID)
+		}
 	}
-	if family.InvitationID != nil {
-		sqlKeys = append(sqlKeys, "invitation_id")
-		sqlValues = append(sqlValues, *family.InvitationID)
+
+	if len(sqlKeys) == 0 {
+		return nil
 	}
 
 	sql := "update public.family set"
