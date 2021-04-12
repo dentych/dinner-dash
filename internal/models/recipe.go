@@ -7,7 +7,6 @@ type Recipe struct {
 	Name        string  `json:"name"`
 	Url         *string `json:"url,omitempty"`
 	Description *string `json:"description,omitempty"`
-	Directions  *string `json:"directions,omitempty"`
 	Family      *Family `json:"family"`
 	Ingredients []Ingredient
 }

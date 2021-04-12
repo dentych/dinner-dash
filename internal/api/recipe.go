@@ -2,6 +2,7 @@ package api
 
 import (
 	"gitlab.com/dentych/dinner-dash/internal/database"
+	"gitlab.com/dentych/dinner-dash/internal/models"
 )
 
 type RecipeApi struct {
@@ -11,6 +12,10 @@ type RecipeApi struct {
 
 func NewRecipeApi(familyRepo database.FamilyRepo, recipeRepo database.RecipeRepo) *RecipeApi {
 	return &RecipeApi{familyRepo: familyRepo, recipeRepo: recipeRepo}
+}
+
+func (a *RecipeApi) AddRecipe(recipe models.Recipe) error {
+
 }
 
 //func (api *RecipeApi) Create(user models.User, familyID int, recipe models.RecipeInput) (int, error) {

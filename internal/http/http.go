@@ -45,6 +45,7 @@ func (h *Server) SetupAndStart(ctx context.Context, jwtCertificate string) {
 	apiGroup.GET("/invite/:invitationId", handler.GetInvitationInformation(h.familyApi))
 	apiGroup.PUT("/invite/:invitationId", handler.AcceptInvitation(h.familyApi))
 	apiGroup.GET("/recipes", handler.GetRecipes)
+	apiGroup.POST("recipes", handler.AddRecipe(h.recipeApi))
 
 	err := e.Start(":8080")
 	if err != nil {
