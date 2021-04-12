@@ -18,6 +18,7 @@ type FamilyRepo interface {
 	Delete(ctx context.Context, family models.Family) error
 	UserInFamily(ctx context.Context, userID string, familyID int) (bool, error)
 	AddMember(ctx context.Context, familyID int, userID string) error
+	RemoveMember(ctx context.Context, familyID int, userID string) error
 }
 
 type Family struct {
@@ -119,8 +120,10 @@ func (f *familyRepo) GetByInvitationID(ctx context.Context, invitationID string)
 
 func (f *familyRepo) AddMember(ctx context.Context, familyID int, userID string) error {
 	_, err := f.db.Exec("update public.user set family_id = $1 where id = $2", familyID, userID)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
+}
+
+func (f *familyRepo) RemoveMember(ctx context.Context, familyID int, userID string) error {
+	_, err := f.db.Exec("update public.user set family_id = null where id = $1", userID)
+	return err
 }

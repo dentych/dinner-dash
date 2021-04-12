@@ -137,3 +137,38 @@ func AcceptInvitation(familyApi *api.FamilyApi) func(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, familyID)
 	}
 }
+
+func LeaveFamily(familyApi *api.FamilyApi) func(ctx echo.Context) error {
+	return func(ctx echo.Context) error {
+		userID := util.GetUserID(ctx)
+		familyID, err := strconv.Atoi(ctx.Param("id"))
+		if err != nil {
+			ctx.Logger().Errorf("invalid familyID: %s", familyID)
+			return ctx.JSON(http.StatusBadRequest, "invalid familyID")
+		}
+		err = familyApi.LeaveFamily(context.Background(), userID, familyID)
+		if err != nil {
+			ctx.Logger().Errorf("failed to accept invitation with ID=%s for userID=%s and familyID=%s. error: %s", familyID, userID, familyID, err)
+			return ctx.JSON(http.StatusInternalServerError, "failed to accept invitation")
+		}
+
+		return ctx.JSON(http.StatusOK, familyID)
+	}
+}
+
+func GetInvitationInformation(familyApi *api.FamilyApi) func(ctx echo.Context) error {
+	return func(ctx echo.Context) error {
+		invitationID := ctx.Param("invitationId")
+		if invitationID == "" {
+			ctx.Logger().Errorf("invalid invitationID")
+			return ctx.JSON(400, "invalid invitationID")
+		}
+		invitationInfo, err := familyApi.GetInvitationInformation(context.Background(), invitationID)
+		if err != nil {
+			ctx.Logger().Errorf("Failed to get invitation information: %s", err)
+			return ctx.JSON(500, "error getting invitation information")
+		}
+
+		return ctx.JSON(200, invitationInfo)
+	}
+}

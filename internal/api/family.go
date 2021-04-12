@@ -152,6 +152,24 @@ func (api *FamilyApi) AcceptInvitation(ctx context.Context, userID string, invit
 	return family.ID, nil
 }
 
+func (api *FamilyApi) LeaveFamily(ctx context.Context, userID string, familyID int) error {
+	inFamily, err := api.familyRepo.UserInFamily(ctx, userID, familyID)
+	if err != nil {
+		return err
+	}
+
+	if !inFamily {
+		return ErrUserNotInFamily
+	}
+
+	err = api.familyRepo.RemoveMember(ctx, familyID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 var symbols = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
 func (api *FamilyApi) randomString(length int) string {
@@ -161,4 +179,16 @@ func (api *FamilyApi) randomString(length int) string {
 		output[i] = symbols[rand.Intn(len(symbols))]
 	}
 	return string(output)
+}
+
+func (api *FamilyApi) GetInvitationInformation(ctx context.Context, invitationID string) (models.InvitationInformation, error) {
+	family, err := api.familyRepo.GetByInvitationID(ctx, invitationID)
+	if err != nil {
+		return models.InvitationInformation{}, err
+	}
+
+	return models.InvitationInformation{
+		FamilyName:   *family.Name,
+		InvitationID: *family.InvitationID,
+	}, nil
 }
