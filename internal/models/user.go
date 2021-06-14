@@ -5,26 +5,23 @@ import (
 )
 
 type User struct {
-	ID          string    `json:"id"`
-	Email       string    `json:"email"`
-	DisplayName *string   `json:"displayName"`
-	CreatedAt   time.Time `json:"createdAt"`
-	FamilyID    *int      `json:"familyId"`
-	FamilyName  *string   `json:"familyName"`
+	Username   string    `json:"id"`
+	Email      string    `json:"email"`
+	CreatedAt  time.Time `json:"createdAt"`
+	FamilyID   *int      `json:"familyId"`
+	FamilyName *string   `json:"familyName"`
 }
 
 type UserWithFamilyName struct {
-	ID          string    `json:"id"`
-	Email       string    `json:"email"`
-	DisplayName *string   `json:"displayName,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"`
-	FamilyID    *int      `json:"familyId,omitempty"`
-	FamilyName  *string   `json:"familyName,omitempty"`
+	Username   string    `json:"id"`
+	Email      string    `json:"email"`
+	CreatedAt  time.Time `json:"createdAt"`
+	FamilyID   *int      `json:"familyId,omitempty"`
+	FamilyName *string   `json:"familyName,omitempty"`
 }
 
 type FamilyMember struct {
-	ID          string `json:"id"`
-	DisplayName string `json:"displayName"`
+	Username string `json:"displayName"`
 }
 
 type Family struct {

@@ -7,11 +7,11 @@ CREATE TABLE public.family
 
 CREATE TABLE public.user
 (
-    id           text PRIMARY KEY,
-    email        VARCHAR(100) NOT NULL,
-    display_name varchar(50)  not null,
-    family_id    integer references public.family (id),
-    created_at   timestamp default CURRENT_TIMESTAMP
+    username        text PRIMARY KEY,
+    email           VARCHAR(100) NOT NULL,
+    hashed_password text         not null,
+    family_id       integer references public.family (id),
+    created_at      timestamp default CURRENT_TIMESTAMP
 );
 
 CREATE TABLE public.recipe
@@ -20,5 +20,6 @@ CREATE TABLE public.recipe
     name        TEXT    NOT NULL,
     url         TEXT,
     family_id   integer not null references public.family (id),
+    description text    not null,
     ingredients jsonb   not null
 );

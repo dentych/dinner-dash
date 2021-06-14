@@ -19,7 +19,7 @@ func RunMigrations(config config.DatabaseConfig) {
 		log.Fatalf("Failed to migrate: %v", err)
 	}
 
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange{
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Fatalf("Failed to run migrate UP: %v", err)
 	}
 }

@@ -1,10 +1,6 @@
 package http
 
 import (
-	"context"
-	"crypto/x509"
-	"encoding/pem"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gitlab.com/dentych/dinner-dash/internal/api"
@@ -27,46 +23,30 @@ func NewServer(userApi *api.UserApi, familyApi *api.FamilyApi) *Server { //, fam
 	}
 }
 
-func (h *Server) SetupAndStart(ctx context.Context, jwtCertificate string) {
+func (s *Server) SetupAndStart() {
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORS())
-	jwtMiddleware := setupJwt(e, jwtCertificate)
+	authGroup := e.Group("/api/auth")
+	authGroup.POST("/login", handler.Login(s.userApi))
+	authGroup.POST("/register", handler.Register(s.userApi))
+	jwtMiddleware := middleware.JWT([]byte("supersecretkey"))
 	apiGroup := e.Group("/api", jwtMiddleware)
-	apiGroup.GET("/user", handler.GetUser(h.userApi))
-	apiGroup.POST("/user", handler.CreateUser(h.userApi))
-	apiGroup.GET("/family/:id", handler.GetFamily(h.familyApi))
-	apiGroup.POST("/family", handler.CreateFamily(h.familyApi))
-	apiGroup.PUT("/family/:id", handler.UpdateFamily(h.familyApi))
-	apiGroup.POST("/family/:id/invite", handler.GenerateInvitation(h.familyApi))
-	apiGroup.DELETE("/family/:id/invite", handler.DeleteInvitationLink(h.familyApi))
-	apiGroup.PUT("/family/:id/leave", handler.LeaveFamily(h.familyApi))
-	apiGroup.GET("/invite/:invitationId", handler.GetInvitationInformation(h.familyApi))
-	apiGroup.PUT("/invite/:invitationId", handler.AcceptInvitation(h.familyApi))
+	apiGroup.GET("/user", handler.GetUser(s.userApi))
+	apiGroup.GET("/family/:id", handler.GetFamily(s.familyApi))
+	apiGroup.POST("/family", handler.CreateFamily(s.familyApi))
+	apiGroup.PUT("/family/:id", handler.UpdateFamily(s.familyApi))
+	apiGroup.POST("/family/:id/invite", handler.GenerateInvitation(s.familyApi))
+	apiGroup.DELETE("/family/:id/invite", handler.DeleteInvitationLink(s.familyApi))
+	apiGroup.PUT("/family/:id/leave", handler.LeaveFamily(s.familyApi))
+	apiGroup.GET("/invite/:invitationId", handler.GetInvitationInformation(s.familyApi))
+	apiGroup.PUT("/invite/:invitationId", handler.AcceptInvitation(s.familyApi))
 	apiGroup.GET("/recipes", handler.GetRecipes)
-	apiGroup.POST("recipes", handler.AddRecipe(h.recipeApi))
+	apiGroup.POST("recipes", handler.AddRecipe(s.recipeApi))
 
 	err := e.Start(":8080")
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-}
-
-func setupJwt(e *echo.Echo, jwtCertificate string) echo.MiddlewareFunc {
-	pemCert, _ := pem.Decode([]byte(jwtCertificate))
-	if pemCert == nil {
-		e.Logger.Fatal("Failed to parse pem certificate")
-		return nil
-	}
-	certificate, err := x509.ParseCertificate(pemCert.Bytes)
-	if err != nil {
-		e.Logger.Fatal("Failed to parse pemCert.Bytes", err)
-	}
-	signingKey := certificate.PublicKey
-	config := middleware.JWTConfig{
-		SigningMethod: jwt.SigningMethodRS256.Alg(),
-		SigningKey:    signingKey,
-	}
-	return middleware.JWTWithConfig(config)
 }

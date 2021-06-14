@@ -5,15 +5,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"gitlab.com/dentych/dinner-dash/internal/api"
-	"gitlab.com/dentych/dinner-dash/internal/models"
 	"net/http"
-	"time"
 )
-
-type createUserInput struct {
-	Email       string `json:"email"`
-	DisplayName string `json:"displayName"`
-}
 
 func GetUser(userApi *api.UserApi) func(c echo.Context) error {
 	return func(c echo.Context) error {
@@ -34,29 +27,54 @@ func GetUser(userApi *api.UserApi) func(c echo.Context) error {
 	}
 }
 
-func CreateUser(userApi *api.UserApi) func(c echo.Context) error {
+func Login(api *api.UserApi) func(ctx echo.Context) error {
 	return func(c echo.Context) error {
-		userClaims := c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)
-		userID := userClaims["sub"].(string)
-		var input createUserInput
-		err := c.Bind(&input)
+		var body map[string]string
+		err := c.Bind(&body)
 		if err != nil {
-			c.Logger().Errorf("error binding: %s", err)
-			return c.JSON(http.StatusBadRequest, "invalid input")
+			c.Logger().Errorf("error binding request body: %s", err)
+			return echo.ErrUnauthorized
 		}
 
-		user := models.User{
-			ID:          userID,
-			Email:       input.Email,
-			DisplayName: &input.DisplayName,
-			CreatedAt:   time.Time{},
-			FamilyID:    nil,
-		}
-		err = userApi.CreateUser(context.Background(), user)
+		username := body["username"]
+		password := body["password"]
+
+		token, err := api.Login(context.Background(), username, password)
 		if err != nil {
-			c.Logger().Errorf("error creating user: %s", err)
-			return c.JSON(http.StatusInternalServerError, "internal error")
+			c.Logger().Errorf("failed to login: %s", err)
+			return echo.ErrUnauthorized
 		}
-		return c.JSON(http.StatusCreated, user)
+
+		return c.JSON(http.StatusOK, map[string]string{
+			"token": token,
+		})
+	}
+}
+
+func Register(api *api.UserApi) func(echo.Context) error {
+	return func(c echo.Context) error {
+		var body map[string]string
+		err := c.Bind(&body)
+		if err != nil {
+			c.Logger().Errorf("Failed to bind user info: %s", err)
+			return err
+		}
+
+		username := body["username"]
+		password := body["password"]
+		email := body["email"]
+
+		if username == "" || password == "" || email == "" {
+			return echo.ErrBadRequest
+		}
+
+		err = api.Register(context.Background(), username, password, email)
+		if err != nil {
+			c.Logger().Errorf("error registering new user: %s", err)
+			br := echo.ErrBadRequest.SetInternal(err)
+			return br
+		}
+
+		return nil
 	}
 }

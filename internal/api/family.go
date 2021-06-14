@@ -62,8 +62,7 @@ func (api *FamilyApi) Get(ctx context.Context, userID string, familyID int) (mod
 	}
 	for _, v := range members {
 		family.Members = append(family.Members, models.FamilyMember{
-			ID:          v.ID,
-			DisplayName: *v.DisplayName,
+			Username:          v.Username,
 		})
 	}
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"gitlab.com/dentych/dinner-dash/internal/api"
 	"gitlab.com/dentych/dinner-dash/internal/models"
@@ -24,6 +25,17 @@ func AddRecipe(api *api.RecipeApi) func(ctx echo.Context) error {
 			ctx.Logger().Infof("User tried to create a new recipe which was invalid: %s", err)
 			return ctx.JSON(400, "invalid recipe")
 		}
-		err := api.AddRecipe()
+		return fmt.Errorf("not implemented yet")
 	}
+}
+
+func mapIngredients(ingredients []models.IngredientInput) []models.Ingredient {
+	//var outputIngredients []models.Ingredient
+	//for _, ingredient := range ingredients {
+	//	output := models.Ingredient{
+	//		Type:   models.IngredientType{},
+	//		Amount: 0,
+	//	}
+	//}
+	return nil
 }

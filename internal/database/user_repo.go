@@ -10,8 +10,17 @@ import (
 	"time"
 )
 
+type User struct {
+	Username       string
+	Email          string
+	HashedPassword string    `db:"hashed_password"`
+	FamilyID       *int      `db:"family_id"`
+	FamilyName     *string   `db:"family_name"`
+	CreatedAt      time.Time `db:"created_at"`
+}
+
 type UserRepo interface {
-	GetById(ctx context.Context, userID string) (*User, error)
+	GetById(ctx context.Context, username string) (*User, error)
 	GetByFamilyId(ctx context.Context, familyID int) ([]User, error)
 	Insert(ctx context.Context, user User) error
 }
@@ -26,18 +35,9 @@ func NewUserRepo(db *sqlx.DB) UserRepo {
 	}
 }
 
-type User struct {
-	ID          string
-	Email       string
-	DisplayName *string   `db:"display_name"`
-	FamilyID    *int      `db:"family_id"`
-	CreatedAt   time.Time `db:"created_at"`
-	FamilyName  *string   `db:"family_name"`
-}
-
-func (r *userRepo) GetById(ctx context.Context, userID string) (*User, error) {
+func (r *userRepo) GetById(ctx context.Context, username string) (*User, error) {
 	var user User
-	err := r.db.Get(&user, "select u.*, f.name family_name from public.user u left join public.family f on u.family_id = f.id where u.id = $1", userID)
+	err := r.db.Get(&user, "select u.*, f.name family_name from public.user u left join public.family f on u.family_id = f.id where u.username = $1", username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -57,7 +57,8 @@ func (r *userRepo) GetByFamilyId(ctx context.Context, familyID int) ([]User, err
 }
 
 func (r *userRepo) Insert(ctx context.Context, user User) error {
-	_, err := r.db.Exec("insert into public.user (id, email, display_name) values ($1, $2, $3)", user.ID, user.Email, user.DisplayName)
+	sqlStatement := "insert into public.user (username, email, hashed_password, created_at) values ($1, $2, $3, $4)"
+	_, err := r.db.Exec(sqlStatement, user.Username, user.Email, user.HashedPassword, user.CreatedAt)
 	if err != nil {
 		return err
 	}
